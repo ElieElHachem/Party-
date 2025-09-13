@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚇 Fête d'Anniversaire - Stations de Métro</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: slideInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            outline: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: #666;
+        }
+
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .station-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .station-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .station-card:hover::before {
+            left: 100%;
+        }
+
+        .station-card.available:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
+        }
+
+        .station-card.reserved {
+            background: rgba(128, 128, 128, 0.3);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .station-card.selected {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+            box-shadow: 0 0 30px rgba(76, 175, 80, 0.5);
+        }
+
+        .station-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .station-icon {
+            font-size: 1.5em;
+        }
+
+        .station-status {
+            font-size: 0.9em;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.available {
+            background-color: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.reserved {
+            background-color: #f44336;
+        }
+
+        .status-indicator.selected {
+            background-color: #2196F3;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #f44336, #da190b);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-left: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .no-stations {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .stats {
+                gap: 20px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+                min-width: 120px;
+            }
+            
+            .stations-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .notification {
+                right: 10px;
+                left: 10px;
+                transform: translateY(-100px);
+            }
+            
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚇 Fête d'Anniversaire</h1>
+            <p>Choisissez votre station de métro parisienne</p>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <span class="stat-number" id="availableCount">-</span>
+                    <span>Disponibles</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="reservedCount">-</span>
+                    <span>Prises</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="totalCount">-</span>
+                    <span>Total</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Rechercher une station...">
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Chargement des stations...</p>
+        </div>
+
+        <div class="stations-grid" id="stationsGrid"></div>
+        
+        <div class="no-stations hidden" id="noStations">
+            <p>Aucune station trouvée pour votre recherche</p>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        class MetroStationSelector {
+            constructor() {
+                this.socket = io();
+                this.stations = [];
+                this.selectedStation = null;
+                this.filteredStations = [];
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.loadStations();
+            }
+
+            initializeElements() {
+                this.loadingEl = document.getElementById('loading');
+                this.stationsGridEl = document.getElementById('stationsGrid');
+                this.searchInputEl = document.getElementById('searchInput');
+                this.notificationEl = document.getElementById('notification');
+                this.noStationsEl = document.getElementById('noStations');
+                this.availableCountEl = document.getElementById('availableCount');
+                this.reservedCountEl = document.getElementById('reservedCount');
+                this.totalCountEl = document.getElementById('totalCount');
+            }
+
+            setupEventListeners() {
+                // Recherche en temps réel
+                this.searchInputEl.addEventListener('input', (e) => {
+                    this.filterStations(e.target.value);
+                });
+
+                // WebSocket events
+                this.socket.on('stationReserved', (data) => {
+                    this.updateStationStatus(data.station, 'reserved');
+                    this.showNotification(`Station "${data.station}" prise !`, 'info');
+                });
+
+                this.socket.on('stationReleased', (data) => {
+                    this.updateStationStatus(data.station, 'available');
+                    this.showNotification(`Station "${data.station}" libérée !`, 'info');
+                });
+
+                this.socket.on('allStationsReleased', () => {
+                    this.loadStations();
+                    this.showNotification('Toutes les stations ont été libérées !', 'info');
+                });
+            }
+
+            async loadStations() {
+                try {
+                    const response = await fetch('/api/stations');
+                    this.stations = await response.json();
+                    this.filteredStations = [...this.stations];
+                    this.renderStations();
+                    this.updateStats();
+                    this.hideLoading();
+                } catch (error) {
+                    this.showNotification('Erreur lors du chargement des stations', 'error');
+                    this.hideLoading();
+                }
+            }
+
+            renderStations() {
+                if (this.filteredStations.length === 0) {
+                    this.stationsGridEl.classList.add('hidden');
+                    this.noStationsEl.classList.remove('hidden');
+                    return;
+                }
+
+                this.stationsGridEl.classList.remove('hidden');
+                this.noStationsEl.classList.add('hidden');
+
+                this.stationsGridEl.innerHTML = this.filteredStations.map(station => {
+                    const statusClass = station.reserved ? 'reserved' : 'available';
+                    const statusText = station.reserved ? 'Prise' : 'Disponible';
+                    const statusIcon = station.reserved ? '🔒' : '✅';
+                    
+                    return `
+                        <div class="station-card ${statusClass}" data-station="${station.name}">
+                            <div class="station-name">
+                                <span class="station-icon">🚇</span>
+                                ${station.name}
+                            </div>
+                            <div class="station-status">
+                                <span class="status-indicator ${statusClass}"></span>
+                                ${statusIcon} ${statusText}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Ajouter les event listeners pour les clics
+                this.stationsGridEl.querySelectorAll('.station-card').forEach(card => {
+                    if (!card.classList.contains('reserved')) {
+                        card.addEventListener('click', () => {
+                            this.selectStation(card.dataset.station);
+                        });
+                    }
+                });
+            }
+
+            async selectStation(stationName) {
+                if (this.selectedStation) {
+                    this.showNotification('Vous avez déjà sélectionné une station !', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/reserve', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ station: stationName })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        this.selectedStation = stationName;
+                        this.updateStationStatus(stationName, 'selected');
+                        this.showNotification(`Félicitations ! Vous avez choisi "${stationName}" 🎉`, 'success');
+                    } else {
+                        this.showNotification(result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showNotification('Erreur lors de la sélection', 'error');
+                }
+            }
+
+            updateStationStatus(stationName, status) {
+                // Mettre à jour les données
+                const station = this.stations.find(s => s.name === stationName);
+                if (station) {
+                    station.reserved = (status === 'reserved' || status === 'selected');
+                }
+
+                // Mettre à jour l'affichage si la station est visible
+                const stationCard = document.querySelector(`[data-station="${stationName}"]`);
+                if (stationCard) {
+                    stationCard.className = `station-card ${status}`;
+                    
+                    const statusIndicator = stationCard.querySelector('.status-indicator');
+                    const statusText = stationCard.querySelector('.station-status');
+                    
+                    if (status === 'reserved') {
+                        statusIndicator.className = 'status-indicator reserved';
+                        statusText.innerHTML = '<span class="status-indicator reserved"></span>🔒 Prise';
+                        stationCard.style.cursor = 'not-allowed';
+                    } else if (status === 'selected') {
+                        statusIndicator.className = 'status-indicator selected';
+                        statusText.innerHTML = '<span class="status-indicator selected"></span>🎯 Votre choix';
+                        stationCard.style.cursor = 'default';
+                    } else {
+                        statusIndicator.className = 'status-indicator available';
+                        statusText.innerHTML = '<span class="status-indicator available"></span>✅ Disponible';
+                        stationCard.style.cursor = 'pointer';
+                    }
+                }
+
+                this.updateStats();
+            }
+
+            filterStations(query) {
+                const searchTerm = query.toLowerCase().trim();
+                
+                if (searchTerm === '') {
+                    this.filteredStations = [...this.stations];
+                } else {
+                    this.filteredStations = this.stations.filter(station =>
+                        station.name.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                this.renderStations();
+            }
+
+            updateStats() {
+                const available = this.stations.filter(s => !s.reserved).length;
+                const reserved = this.stations.filter(s => s.reserved).length;
+                const total = this.stations.length;
+
+                this.availableCountEl.textContent = available;
+                this.reservedCountEl.textContent = reserved;
+                this.totalCountEl.textContent = total;
+            }
+
+            showNotification(message, type = 'info') {
+                this.notificationEl.textContent = message;
+                this.notificationEl.className = `notification ${type}`;
+                
+                // Forcer le reflow
+                this.notificationEl.offsetHeight;
+                
+                this.notificationEl.classList.add('show');
+                
+                setTimeout(() => {
+                    this.notificationEl.classList.remove('show');
+                }, 4000);
+            }
+
+            hideLoading() {
+                this.loadingEl.classList.add('hidden');
+            }
+        }
+
+        // Initialiser l'application
+        document.addEventListener('DOMContentLoaded', () => {
+            new MetroStationSelector();
+        });
+    </script>
+</body>
+</html>

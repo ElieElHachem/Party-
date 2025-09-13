@@ -1,0 +1,23 @@
+{
+  "name": "metro-birthday-party",
+  "version": "1.0.0",
+  "description": "Site pour fête d'anniversaire thème métro parisien",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "rate-limiter-flexible": "^2.4.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["metro", "paris", "birthday", "party"],
+  "author": "Votre nom",
+  "license": "MIT"
+}
