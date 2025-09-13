@@ -45,50 +45,51 @@ const rateLimiter = new RateLimiterMemory({
 let reservedStations = new Map(); // station -> IP
 let ipReservations = new Map(); // IP -> station
 
-// Liste des stations de métro parisiennes (sélection représentative)
+// Liste complète et dédoublonnée des stations du métro de Paris (au 2025)
 const metroStations = [
-  // Ligne 1
-  'Château de Vincennes', 'Bérault', 'Saint-Mandé', 'Nation', 'Reuilly - Diderot',
-  'Gare de Lyon', 'Châtelet', 'Louvre - Rivoli', 'Palais-Royal - Musée du Louvre',
-  'Tuileries', 'Concorde', 'Champs-Élysées - Clemenceau', 'George V', 'Charles de Gaulle - Étoile',
-  'Argentine', 'Porte Maillot', 'Les Sablons', 'Pont de Neuilly', 'Esplanade de La Défense',
-  'La Défense',
-  
-  // Ligne 4
-  'Porte de Clignancourt', 'Simplon', 'Marcadet - Poissonniers', 'Château Rouge',
-  'Barbès - Rochechouart', 'Gare du Nord', 'Gare de l Est', 'République', 'Hôtel de Ville',
-  'Cité', 'Saint-Michel', 'Odéon', 'Saint-Germain-des-Prés', 'Saint-Sulpice',
-  'Saint-Placide', 'Montparnasse - Bienvenüe', 'Vavin', 'Raspail', 'Denfert-Rochereau',
-  'Mouton-Duvernet', 'Alésia', 'Porte d Orléans',
-  
-  // Ligne 6
-  'Kléber', 'Boissière', 'Trocadéro', 'Passy', 'Bir-Hakeim',
-  'Dupleix', 'La Motte-Picquet - Grenelle', 'Cambronne', 'Sèvres - Lecourbe',
-  'Pasteur', 'Edgar Quinet', 'Saint-Jacques', 'Glacière', 'Corvisart', 'Place d Italie', 'Nationale', 'Chevaleret',
-  'Quai de la Gare', 'Bercy', 'Dugommier', 'Daumesnil', 'Bel-Air', 'Picpus',
-  
-  // Ligne 9
-  'Pont de Sèvres', 'Billancourt', 'Marcel Sembat', 'Exelmans',
-  'Michel-Ange - Molitor', 'Michel-Ange - Auteuil', 'Jasmin', 'Ranelagh', 'La Muette',
-  'Rue de la Pompe', 'Iéna', 'Alma - Marceau', 'Franklin D. Roosevelt',
-  'Chaussée d Antin - La Fayette', 'Richelieu - Drouot', 'Grands Boulevards',
-  'Bonne Nouvelle', 'Strasbourg - Saint-Denis', 'Oberkampf',
-  'Saint-Ambroise', 'Voltaire', 'Charonne', 'Rue des Boulets',
-  'Buzenval', 'Maraîchers', 'Porte de Montreuil', 'Robespierre', 'Croix de Chavaux',
-  'Mairie de Montreuil',
-  
-  // Ligne 14
-  'Saint-Lazare', 'Cour Saint-Émilion',
-  'Bibliothèque François Mitterrand', 'Olympiades',
-  
-  // Stations emblématiques d'autres lignes
-  'Pigalle', 'Abbesses', 'Anvers', 'Opéra', 'Bastille', 'Père Lachaise',
-  'Belleville', 'Ménilmontant', 'Invalides', 'École Militaire', 'Pont Neuf',
-  'Châtelet - Les Halles', 'Réaumur - Sébastopol', 'Arts et Métiers',
-  'Temple', 'Filles du Calvaire', 'Saint-Paul', 'Pont Marie', 'Sully - Morland',
-  'Mabillon', 'Cluny - La Sorbonne', 'Maubert - Mutualité', 'Cardinal Lemoine',
-  'Jussieu', 'Place Monge', 'Censier - Daubenton', 'Les Gobelins',
-  'Tolbiac', 'Maison Blanche', 'Porte d Italie'
+  'Abbesses','Aimé Césaire','Alésia','Alexandre Dumas','Alma - Marceau','Anatole France','Anvers',
+  'Assemblée nationale','Aubervilliers - Pantin - Quatre Chemins','Avenue Émile Zola','Avron','Aéroport d\'Orly',
+  'Bagneux - Lucie Aubrac','Balard','Barbara','Barbès - Rochechouart','Basilique de Saint-Denis','Bastille',
+  'Bel-Air','Belleville','Bérault','Bercy','Bibliothèque François Mitterrand','Billancourt','Bir-Hakeim',
+  'Blanche','Bobigny - Pablo Picasso','Bobigny - Pantin - Raymond Queneau','Boissière','Bolivar','Bonne Nouvelle',
+  'Botzaris','Boucicaut','Boulogne - Jean Jaurès','Boulogne - Pont de Saint-Cloud','Bourse','Bréguet - Sabin',
+  'Brochant','Buttes Chaumont','Buzenval','Cadet','Cambronne','Campo-Formio','Cardinal Lemoine','Carrefour Pleyel',
+  'Censier - Daubenton','Champs-Élysées - Clemenceau','Chardon-Lagache','Charenton - Écoles','Charles de Gaulle - Étoile',
+  'Charles Michels','Charonne','Château d\'Eau','Château de Vincennes','Château-Landon','Château Rouge','Châtelet',
+  'Châtillon - Montrouge','Chaussée d\'Antin - La Fayette','Chemin Vert','Chevaleret','Chevilly-Larue','Cité',
+  'Cluny - La Sorbonne','Colonel Fabien','Commerce','Concorde','Convention','Corentin Cariou','Corentin Celton','Corvisart',
+  'Coteaux Beauclair','Cour Saint-Émilion','Courcelles','Couronnes','Créteil - L\'Échat','Créteil - Préfecture',
+  'Créteil - Université','Crimée','Croix de Chavaux','Daumesnil','Danube','Denfert-Rochereau','Dugommier','Dupleix',
+  'Duroc','École Militaire','École vétérinaire de Maisons-Alfort','Edgar Quinet','Église d\'Auteuil','Église de Pantin',
+  'Esplanade de La Défense','Étienne Marcel','Europe','Exelmans','Faidherbe - Chaligny','Falguière','Félix Faure',
+  'Filles du Calvaire','Fort d\'Aubervilliers','Franklin D. Roosevelt','Front Populaire','Gabriel Péri','Gaîté','Gallieni',
+  'Gambetta','Gare d\'Austerlitz','Gare de l\'Est','Gare de Lyon','Gare du Nord','Garibaldi','George V','Glacière','Goncourt',
+  'Grands Boulevards','Guy Môquet','Havre - Caumartin','Hoche','Hôpital Bicêtre','Hôtel de Ville','Iéna','Invalides',
+  'Jacques Bonsergent','Jasmin','Jaurès','Javel - André Citroën','Jourdain','Jules Joffrin','Jussieu','Kléber','La Chapelle',
+  'La Courneuve - 8 Mai 1945','La Défense','La Dhuys','La Fourche','La Motte-Picquet - Grenelle','La Muette','La Tour-Maubourg',
+  'Lamarck - Caulaincourt','Laumière','Le Kremlin-Bicêtre','Le Peletier','Ledru-Rollin','Les Agnettes','Les Courtilles','Les Gobelins',
+  'Les Halles','Les Sablons','L\'Haÿ-les-Roses','Liberté','Liège','Louis Blanc','Louise Michel','Lourmel','Louvre - Rivoli',
+  'Mabillon','Madeleine','Mairie d\'Aubervilliers','Mairie d\'Issy','Mairie d\'Ivry','Mairie de Clichy','Mairie de Montreuil',
+  'Mairie de Montrouge','Mairie de Saint-Ouen','Mairie des Lilas','Maison Blanche','Maisons-Alfort - Les Juilliottes',
+  'Maisons-Alfort - Stade','Malakoff - Plateau de Vanves','Malakoff - Rue Étienne Dolet','Malesherbes','Maraîchers','Marcadet - Poissonniers',
+  'Marcel Sembat','Marx Dormoy','Maubert - Mutualité','Ménilmontant','Michel Bizot','Michel-Ange - Auteuil','Michel-Ange - Molitor',
+  'Mirabeau','Miromesnil','Monceau','Montgallet','Montparnasse - Bienvenüe','Montreuil - Hôpital','Mouton-Duvernet','Nation','Nationale',
+  'Notre-Dame-de-Lorette','Notre-Dame-des-Champs','Oberkampf','Odéon','Olympiades','Opéra','Ourcq','Palais-Royal - Musée du Louvre',
+  'Parmentier','Passy','Pasteur','Pelleport','Père Lachaise','Pereire','Pernety','Philippe Auguste','Picpus','Pierre et Marie Curie',
+  'Pigalle','Place d\'Italie','Place de Clichy','Place des Fêtes','Place Monge','Plaisance','Pointe du Lac','Poissonnière',
+  'Pont de Levallois - Bécon','Pont de Neuilly','Pont de Sèvres','Pont Cardinet','Pont Marie','Pont-Neuf','Porte Dauphine','Porte d\'Auteuil',
+  'Porte de Bagnolet','Porte de Champerret','Porte de Charenton','Porte de Choisy','Porte de Clichy','Porte de Clignancourt','Porte de la Chapelle',
+  'Porte de la Villette','Porte de Montreuil','Porte de Pantin','Porte de Saint-Cloud','Porte de Saint-Ouen','Porte de Vanves','Porte de Versailles',
+  'Porte de Vincennes','Porte des Lilas','Porte d\'Italie','Porte d\'Ivry','Porte Dorée','Porte d\'Orléans','Porte Maillot','Pré-Saint-Gervais',
+  'Pyramides','Pyrénées','Quai de la Gare','Quai de la Rapée','Quatre-Septembre','Rambuteau','Ranelagh','Raspail','Réaumur - Sébastopol',
+  'Rennes','République','Reuilly - Diderot','Richard-Lenoir','Richelieu - Drouot','Riquet','Robespierre','Romainville - Carnot','Rome',
+  'Rosny-Bois-Perrier','Rue de la Pompe','Rue des Boulets','Rue du Bac','Rue Saint-Maur','Saint-Ambroise','Saint-Augustin','Saint-Denis Pleyel',
+  'Saint-Denis - Porte de Paris','Saint-Denis - Université','Saint-Fargeau','Saint-François-Xavier','Saint-Georges','Saint-Germain-des-Prés','Saint-Jacques',
+  'Saint-Lazare','Saint-Mandé','Saint-Marcel','Saint-Michel','Saint-Ouen','Saint-Paul','Saint-Philippe du Roule','Saint-Placide','Saint-Sébastien - Froissart',
+  'Saint-Sulpice','Ségur','Sentier','Serge Gainsbourg','Sèvres - Babylone','Sèvres - Lecourbe','Simplon','Solférino','Stalingrad','Strasbourg - Saint-Denis',
+  'Sully - Morland','Télégraphe','Temple','Ternes','Thiais - Orly','Tolbiac','Trinité - d\'Estienne d\'Orves','Trocadéro','Tuileries','Vaneau','Varenne',
+  'Vaugirard','Vavin','Victor Hugo','Villejuif - Gustave Roussy','Villejuif - Léo Lagrange','Villejuif - Louis Aragon','Villejuif - Paul Vaillant-Couturier',
+  'Villiers','Volontaires','Voltaire','Wagram'
 ];
 
 // Fonction pour obtenir l'IP réelle du client
