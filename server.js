@@ -16,7 +16,21 @@ const io = socketIo(server, {
 });
 
 // Sécurité et middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "ws:", "wss:"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -42,30 +56,29 @@ const metroStations = [
   
   // Ligne 4
   'Porte de Clignancourt', 'Simplon', 'Marcadet - Poissonniers', 'Château Rouge',
-  'Barbès - Rochechouart', 'Gare du Nord', 'Gare de l\'Est', 'République', 'Hôtel de Ville',
+  'Barbès - Rochechouart', 'Gare du Nord', 'Gare de l Est', 'République', 'Hôtel de Ville',
   'Cité', 'Saint-Michel', 'Odéon', 'Saint-Germain-des-Prés', 'Saint-Sulpice',
   'Saint-Placide', 'Montparnasse - Bienvenüe', 'Vavin', 'Raspail', 'Denfert-Rochereau',
-  'Mouton-Duvernet', 'Alésia', 'Porte d\'Orléans',
+  'Mouton-Duvernet', 'Alésia', 'Porte d Orléans',
   
   // Ligne 6
-  'Charles de Gaulle - Étoile', 'Kléber', 'Boissière', 'Trocadéro', 'Passy', 'Bir-Hakeim',
+  'Kléber', 'Boissière', 'Trocadéro', 'Passy', 'Bir-Hakeim',
   'Dupleix', 'La Motte-Picquet - Grenelle', 'Cambronne', 'Sèvres - Lecourbe',
-  'Pasteur', 'Montparnasse - Bienvenüe', 'Edgar Quinet', 'Raspail', 'Denfert-Rochereau',
-  'Saint-Jacques', 'Glacière', 'Corvisart', 'Place d\'Italie', 'Nationale', 'Chevaleret',
-  'Quai de la Gare', 'Bercy', 'Dugommier', 'Daumesnil', 'Bel-Air', 'Picpus', 'Nation',
+  'Pasteur', 'Edgar Quinet', 'Saint-Jacques', 'Glacière', 'Corvisart', 'Place d Italie', 'Nationale', 'Chevaleret',
+  'Quai de la Gare', 'Bercy', 'Dugommier', 'Daumesnil', 'Bel-Air', 'Picpus',
   
   // Ligne 9
-  'Pont de Sèvres', 'Billancourt', 'Marcel Sembat', 'Pont de Sèvres', 'Exelmans',
+  'Pont de Sèvres', 'Billancourt', 'Marcel Sembat', 'Exelmans',
   'Michel-Ange - Molitor', 'Michel-Ange - Auteuil', 'Jasmin', 'Ranelagh', 'La Muette',
-  'Rue de la Pompe', 'Trocadéro', 'Iéna', 'Alma - Marceau', 'Franklin D. Roosevelt',
-  'Chaussée d\'Antin - La Fayette', 'Richelieu - Drouot', 'Grands Boulevards',
-  'Bonne Nouvelle', 'Strasbourg - Saint-Denis', 'République', 'Oberkampf',
-  'Saint-Ambroise', 'Voltaire', 'Charonne', 'Rue des Boulets', 'Nation',
+  'Rue de la Pompe', 'Iéna', 'Alma - Marceau', 'Franklin D. Roosevelt',
+  'Chaussée d Antin - La Fayette', 'Richelieu - Drouot', 'Grands Boulevards',
+  'Bonne Nouvelle', 'Strasbourg - Saint-Denis', 'Oberkampf',
+  'Saint-Ambroise', 'Voltaire', 'Charonne', 'Rue des Boulets',
   'Buzenval', 'Maraîchers', 'Porte de Montreuil', 'Robespierre', 'Croix de Chavaux',
   'Mairie de Montreuil',
   
   // Ligne 14
-  'Saint-Lazare', 'Châtelet', 'Gare de Lyon', 'Bercy', 'Cour Saint-Émilion',
+  'Saint-Lazare', 'Cour Saint-Émilion',
   'Bibliothèque François Mitterrand', 'Olympiades',
   
   // Stations emblématiques d'autres lignes
@@ -75,7 +88,7 @@ const metroStations = [
   'Temple', 'Filles du Calvaire', 'Saint-Paul', 'Pont Marie', 'Sully - Morland',
   'Mabillon', 'Cluny - La Sorbonne', 'Maubert - Mutualité', 'Cardinal Lemoine',
   'Jussieu', 'Place Monge', 'Censier - Daubenton', 'Les Gobelins',
-  'Place d\'Italie', 'Tolbiac', 'Maison Blanche', 'Porte d\'Italie'
+  'Tolbiac', 'Maison Blanche', 'Porte d Italie'
 ];
 
 // Fonction pour obtenir l'IP réelle du client

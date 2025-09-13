@@ -388,15 +388,25 @@
             }
 
             async loadStations() {
+                console.log('🔄 Chargement des stations...');
                 try {
                     const response = await fetch('/api/stations');
+                    console.log('📡 Réponse reçue:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
                     this.stations = await response.json();
+                    console.log('📊 Stations chargées:', this.stations.length);
+                    
                     this.filteredStations = [...this.stations];
                     this.renderStations();
                     this.updateStats();
                     this.hideLoading();
                 } catch (error) {
-                    this.showNotification('Erreur lors du chargement des stations', 'error');
+                    console.error('❌ Erreur chargement:', error);
+                    this.showNotification(`Erreur: ${error.message}`, 'error');
                     this.hideLoading();
                 }
             }
@@ -542,6 +552,14 @@
 
             hideLoading() {
                 this.loadingEl.classList.add('hidden');
+            }
+
+            startPolling() {
+                // Actualiser toutes les 10 secondes si pas de WebSocket
+                setInterval(() => {
+                    this.loadStations();
+                }, 10000);
+                console.log('🔄 Mode polling activé (actualisation toutes les 10s)');
             }
         }
 

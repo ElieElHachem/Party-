@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Debug - Stations de Métro</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .debug-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .debug-section h3 {
+            color: #ffff00;
+            margin-top: 0;
+        }
+        .log {
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.ok { background: #4CAF50; }
+        .status.error { background: #f44336; }
+        .status.warning { background: #ff9800; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stat-card {
+            background: #333;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug - Stations de Métro</h1>
+        
+        <div class="debug-section">
+            <h3>📡 Tests de Connexion</h3>
+            <button id="testAPIBtn">Test API Stations</button>
+            <button id="testReservationBtn">Test Réservation</button>
+            <button id="clearLogsBtn">Effacer Logs</button>
+            
+            <div style="margin-top: 10px;">
+                <span>API: </span><span id="apiStatus" class="status">Non testé</span>
+                <span>WebSocket: </span><span id="socketStatus" class="status">Non testé</span>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>📊 Statistiques</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStations">-</div>
+                    <div>Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="availableStations">-</div>
+                    <div>Disponibles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="reservedStations">-</div>
+                    <div>Réservées</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>📋 Logs</h3>
+            <div id="debugLog" class="log">Initialisation du debug...\n</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🚇 Liste des Stations (Live)</h3>
+            <div id="stationsList" style="max-height: 300px; overflow-y: auto;">
+                Chargement...
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts externes -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="debug.js"></script>
+</body>
+</html>
