@@ -38,7 +38,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Rate limiting par IP
 let rateLimiter = new RateLimiterMemory({
   points: 1, // 1 sélection par IP
-  duration: 86400, // Reset après 24h
+  duration: 86400 * 24, // Reset après 24h
 });
 
 // Stockage en mémoire des stations et des IPs
