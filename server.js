@@ -36,7 +36,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiting par IP
-const rateLimiter = new RateLimiterMemory({
+let rateLimiter = new RateLimiterMemory({
   points: 1, // 1 sélection par IP
   duration: 86400, // Reset après 24h
 });
@@ -102,6 +102,32 @@ function getRealIP(req) {
          req.ip;
 }
 
+// Efface les clés du rate limiter pour une IP donnée (gère variantes IPv6/IPv4)
+async function clearRateLimiterForIP(ip) {
+  if (!ip || !rateLimiter) return;
+  const variants = new Set();
+  variants.add(ip);
+  // IPv4 mapped in IPv6 -> ::ffff:127.0.0.1
+  if (ip.startsWith('::ffff:')) variants.add(ip.replace('::ffff:', ''));
+  // ::1 -> 127.0.0.1
+  if (ip === '::1') variants.add('127.0.0.1');
+  // If it's plain IPv4, add mapped form
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(ip)) variants.add('::ffff:' + ip);
+  // strip zone id
+  variants.add(ip.split('%')[0]);
+
+  await Promise.all(Array.from(variants).map(async (key) => {
+    try {
+      if (typeof rateLimiter.delete === 'function') {
+        await rateLimiter.delete(key).catch(() => {});
+        console.log('RateLimiter key deleted for', key);
+      }
+    } catch (e) {
+      // ignore errors
+    }
+  }));
+}
+
 // Routes API
 app.get('/api/stations', (req, res) => {
   const stationsStatus = metroStations.map(station => ({
@@ -149,19 +175,26 @@ app.post('/api/reserve', async (req, res) => {
 });
 
 // Route pour libérer une réservation (admin uniquement - pour les tests)
-app.post('/api/release', (req, res) => {
+app.post('/api/release', async (req, res) => {
   const { station, adminKey } = req.body;
-  
+
   // Clé admin simple (à changer en production)
   if (adminKey !== 'reset123') {
     return res.status(403).json({ error: 'Non autorisé' });
   }
-  
+
   if (reservedStations.has(station)) {
     const ip = reservedStations.get(station);
     reservedStations.delete(station);
     ipReservations.delete(ip);
-    
+
+    // Effacer la clé de rate limiter pour l'IP libérée
+    try {
+      await clearRateLimiterForIP(ip);
+    } catch (e) {
+      console.error('Erreur en effaçant la clé rateLimiter pour IP:', e);
+    }
+
     io.emit('stationReleased', { station });
     res.json({ success: true });
   } else {
@@ -170,16 +203,27 @@ app.post('/api/release', (req, res) => {
 });
 
 // Route pour reset toutes les réservations (admin)
-app.post('/api/reset-all', (req, res) => {
+app.post('/api/reset-all', async (req, res) => {
   const { adminKey } = req.body;
-  
+
   if (adminKey !== 'reset123') {
     return res.status(403).json({ error: 'Non autorisé' });
   }
-  
+
+  // Réinitialiser complètement le rate limiter pour être sûr que toutes les clés sont supprimées
+  try {
+    rateLimiter = new RateLimiterMemory({
+      points: 1,
+      duration: 86400*30,
+    });
+    console.log('RateLimiter réinitialisé lors du reset global');
+  } catch (err) {
+    console.error('Erreur en recréant le rateLimiter:', err);
+  }
+
   reservedStations.clear();
   ipReservations.clear();
-  
+
   io.emit('allStationsReleased');
   res.json({ success: true });
 });

@@ -193,6 +193,14 @@ Le serveur affiche :
 - Total des stations
 - Recherche en temps réel
 
+## 🔁 Comportement des resets et libérations
+
+- Lors d'un "reset global" (`POST /api/reset-all`), le serveur réinitialise maintenant le système de rate limiting en mémoire. Cela supprime toutes les entrées qui empêchaient une IP d'effectuer une nouvelle réservation. Après un reset global, les invités peuvent réserver à nouveau normalement.
+
+- Lorsqu'une station est libérée via l'API `POST /api/release`, le serveur supprime également la clé du rate limiter associée à l'IP qui avait réservé cette station. Cela permet à cette IP de choisir une autre station immédiatement après la libération.
+
+Ces changements rendent l'administration plus pratique pour les tests et la gestion manuelle des réservations. En production, pensez à utiliser une stratégie de rate limiting persistante (Redis, etc.) si vous avez besoin de conserver l'état entre redémarrages.
+
 ## 🎨 Personnalisation Avancée
 
 ### Ajouter des thèmes
