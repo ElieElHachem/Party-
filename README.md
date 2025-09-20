@@ -230,4 +230,3 @@ Pour des questions ou améliorations, consultez les logs serveur ou modifiez le 
 
 ---
 
-**Amusez-vous bien à votre fête thématique métro ! 🎉🚇**
